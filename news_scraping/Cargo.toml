@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-reqwest = "0.12.7"
+headless_chrome = "1.0.15"
+reqwest = { version = "0.12.7", features = ["blocking"] }
 scraper = "0.20.0"
+select = "0.6.0"
