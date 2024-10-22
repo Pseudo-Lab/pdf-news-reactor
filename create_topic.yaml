@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: topic-creator
+spec:
+  template:
+    metadata:
+      labels:
+        app: topic-creator
+    spec:
+      containers:
+      - name: topic-creator
+        image: ehddnr/create_reaction_topic
+        imagePullPolicy: Always
+      restartPolicy: OnFailure

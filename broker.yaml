@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broker-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: broker-1
+  template:
+    metadata:
+      labels:
+        app: broker-1
+    spec:
+      containers:
+      - name: broker-1
+        image: confluentinc/cp-kafka:7.3.0
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "1"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: zookeeper:2181
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: PLAINTEXT://broker-1:9092,PLAINTEXT_HOST://:29092
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: PLAINTEXT
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "3"
+        - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+          value: "0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker-1
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 9092
+    targetPort: 9092
+  selector:
+    app: broker-1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broker-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: broker-2
+  template:
+    metadata:
+      labels:
+        app: broker-2
+    spec:
+      containers:
+      - name: broker-2
+        image: confluentinc/cp-kafka:7.3.0
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "2"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: zookeeper:2181
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: PLAINTEXT://broker-2:9092,PLAINTEXT_HOST://:29093
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: PLAINTEXT
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "3"
+        - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+          value: "0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker-2
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 9092
+    targetPort: 9092
+  selector:
+    app: broker-2
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broker-3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: broker-3
+  template:
+    metadata:
+      labels:
+        app: broker-3
+    spec:
+      containers:
+      - name: broker-3
+        image: confluentinc/cp-kafka:7.3.0
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "3"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: zookeeper:2181
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: PLAINTEXT://broker-3:9092,PLAINTEXT_HOST://:29094
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: PLAINTEXT
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "3"
+        - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+          value: "0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker-3
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 9092
+    targetPort: 9092
+  selector:
+    app: broker-3
+

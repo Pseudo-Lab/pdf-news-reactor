@@ -1,0 +1,13 @@
+# Base image
+FROM python:3.9-slim
+
+# Set work directory
+WORKDIR /app
+
+# Install required packages
+RUN pip install kafka-python
+
+# Copy the script
+COPY create_topic.py /app/create_topic.py
+
+CMD ["python", "create_topic.py"]
