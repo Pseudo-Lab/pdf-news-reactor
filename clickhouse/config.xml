@@ -1767,5 +1767,31 @@
                     kafka_max_block_size = 1000;
             ]]></query>
         </scripts>
+
+        <scripts>
+            <query><![CDATA[
+                CREATE TABLE local_table (
+                    `touched` Int32,
+                    `warm` Int32,
+                    `analytical` Int32,
+                    `like` Int32,
+                    `sad` Int32,
+                    `want` Int32,
+                    `recommend` Int32,
+                    `angry` Int32,
+                    `useful` Int32,
+                    `wow` Int32
+                ) ENGINE = MergeTree()
+                ORDER BY touched;
+            ]]></query>
+        </scripts>
+        
+        <!-- kafka_to_local_mv 생성 쿼리 -->
+        <scripts>
+            <query><![CDATA[
+                CREATE MATERIALIZED VIEW kafka_to_local_mv TO local_table AS
+                SELECT * FROM reaction_table;
+            ]]></query>
+        </scripts>
     </startup_scripts>
 </clickhouse>
