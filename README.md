@@ -1,3 +1,9 @@
+# Prepare docker images(Option)
+
+- 기존 docker hub 이미지를 이용할 수 있으나 개인 docker hub를 이용하고 싶은 경우 혹은 이미지 재구축 시 진행
+- `.env_example` 파일을 참고하여 `.env` 파일 생성 및 docker login 정보 입력
+- `bash prepare_docker_images.sh`
+
 # How to use
 
 - 시작하기: `bash start.sh`
