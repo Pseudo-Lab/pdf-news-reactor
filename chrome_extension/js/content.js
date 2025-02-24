@@ -30,6 +30,9 @@
 **/
 
 const journalistNameElement = document.querySelector('.media_end_head_journalist_name');
+const journalistUrlElement = document.querySelector('div.media_journalistcard_summary_text a:first-child');
+
+
 if (journalistNameElement) {
   const journalistName = journalistNameElement.innerText.trim();
   chrome.storage.local.set({ journalist: journalistName }, function() {
@@ -37,48 +40,171 @@ if (journalistNameElement) {
   });
 }
 
-//@urlParsing
-const journalistUrlElement = document.querySelector('div.media_journalistcard_summary_text a:first-child');
+function update() {
+  const likeCountElement = document.querySelectorAll('div._reactionModule.u_likeit.nv_notrans span.u_likeit_list_count._count');
+  const usefulcount = parseInt(likeCountElement[0].textContent) || 0;
+  const wowcount = parseInt(likeCountElement[1].textContent) || 0;
+  const touchedcount = parseInt(likeCountElement[2].textContent) || 0;
+  const analyticalcount = parseInt(likeCountElement[3].textContent) || 0;
+  const recommendcount = parseInt(likeCountElement[4].textContent) || 0;
 
-console.log('test1')
-console.log(journalistUrlElement)
-console.log('test2')
+  chrome.storage.local.set(
+                  {
+                      journalisturl: journalistUrlElement,
+                      useful: usefulcount,
+                      wow: wowcount,
+                      touched: touchedcount,
+                      analytical: analyticalcount,
+                      recommend: recommendcount,
+                  },
+                  function () {
+                      console.log("Data stored in local storage");
+                  }
+              );
+}
 
-//@urlValidate
-fetch("http://144.24.93.80:8088/api/journalist/validate", {
-    method: "POST",
-    body: JSON.stringify({
-        "journalisturl" : journalistUrlElement,
-    }),
-})
-.then((response) => response.json())
-.then((result) => console.log(result));
+async function validate() {
+  try {
+    const response = await fetch("http://144.24.93.80:8088/api/journalist/validate", {
+      method: "POST",
+      body: JSON.stringify({
+        "journalisturl": journalistUrlElement,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("HTTP Error:", response.status);
+      return false;
+    }
+
+    const result = await response.json();
+
+    if (typeof result === 'boolean') {
+        console.log("Validation Result (boolean):", result);
+        return result;
+    }
+
+    if (typeof result === 'object' && result !== null && 'isValid' in result) {
+      console.log("Validation Result (object):", result.isValid);
+      return result.isValid;
+    }
+
+    if (typeof result === 'object' && result !== null && 'result' in result) {
+      console.log("Validation Result (object):", result.result);
+      return result.result;
+    }
+
+    console.warn("Unexpected API response format:", result);
+    return false;
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    return false; // Return false on network or other errors
+  }
+}
+
+
+function add(usefulcount, wowcount, touchedcount, analyticalcount, recommendcount){
+    try {
+        const response = fetch("http://144.24.93.80:8088/api/journalist/add-score", {
+          method: "POST",
+          body: JSON.stringify({
+            "journalisturl": journalistUrlElement,
+            "useful": usefulcount,
+            "touched": touchedcount,
+            "recommend": recommendcount,
+            "analytical": analyticalcount,
+            "wow": wowcount
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = response.json();
+        console.log("API Response:", result);
+      } catch (error) {
+        console.error("API Error:", error);
+      };
+}
 
 function updateLikeCount() {
   const likeCountElement = document.querySelectorAll('div._reactionModule.u_likeit.nv_notrans span.u_likeit_list_count._count');
-  const usefultext = likeCountElement[0].textContent;
-  const wowtext = likeCountElement[1].textContent;
-  const touchedtext = likeCountElement[2].textContent;
-  const analyticaltext = likeCountElement[3].textContent;
-  const recommendtext = likeCountElement[4].textContent;
+  const usefulcount = parseInt(likeCountElement[0].textContent) || 0;
+  const wowcount = parseInt(likeCountElement[1].textContent) || 0;
+  const touchedcount = parseInt(likeCountElement[2].textContent) || 0;
+  const analyticalcount = parseInt(likeCountElement[3].textContent) || 0;
+  const recommendcount = parseInt(likeCountElement[4].textContent) || 0;
 
-  const usefulcount = parseInt(usefultext);
-  const wowcount = parseInt(wowtext);
-  const touchedcount = parseInt(touchedtext);
-  const analyticalcount = parseInt(analyticaltext);
-  const recommendcount = parseInt(recommendtext);
+  if (usefulcount === 0 && wowcount === 0 && touchedcount === 0 && analyticalcount === 0 && recommendcount === 0) {
+    console.error("All like counts are zero. This is not allowed.");
+    alert("모든 좋아요 수가 0입니다. 다시 시도해주세요.");
+    return;
+  }
 
-  chrome.storage.local.set({ useful: usefulcount, wow: wowcount, touched: touchedcount, analytical: analyticalcount, recommend: recommendcount }, function(){
-  });
+  add(usefulcount, wowcount, touchedcount, analyticalcount, recommendcount);
 }
 
-//@setStorage
-setTimeout(function() {
-    updateLikeCount();
-//    if (usefultext !== '0' && wowtext !== '0' && touchedtext !== '0' && analyticaltext !== '0' && recommendtext !== '0') {
-//      console.log("parsing된 점수가 모두 0인 경우가 아니면 기자 점수 추가");
-//    }
-    console.log("평균 점수 조회");
-    console.log("평균 모두 0이면 '부족한 데이터로 조회가 어렵습니다.' text 출력");
-    console.log("평균 모두 0이 아니면 chrome.storage.local.set");
-}, 1000); // 1000ms (1초) 후에 실행
+async function average() {
+    try {
+        const response = await fetch("http://144.24.93.80:8088/api/journalist/average-score", {
+            method: "POST",
+            body: JSON.stringify({
+                "journalisturl": journalistUrlElement,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        const allZero = Object.values(result).slice(1).every(value => value === 0);
+
+        if (allZero) {
+            console.log("부족한 데이터로 조회가 어렵습니다.");
+            alert("부족한 데이터로 조회가 어렵습니다.");
+        } else {
+            const journalisturl = result.journalisturl;
+            const usefulcount = result.useful;
+            const wowcount = result.wow;
+            const touchedcount = result.touched;
+            const analyticalcount = result.analytical;
+            const recommendcount = result.recommend;
+
+            chrome.storage.local.set(
+                {
+                    journalisturl: journalisturl,
+                    useful: usefulcount,
+                    wow: wowcount,
+                    touched: touchedcount,
+                    analytical: analyticalcount,
+                    recommend: recommendcount,
+                },
+                function () {
+                    console.log("Data stored in local storage");
+                }
+            );
+            console.log("Data stored:", result);
+        }
+
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("데이터 조회 중 오류가 발생했습니다.");
+    }
+}
+
+
+setTimeout(function () {
+    update();
+    validate().then(isValid => {
+        if (isValid) {
+            console.log("Validation successful. Proceeding with updateLikeCount and then select.");
+            updateLikeCount();
+            average();
+        } else {
+            console.log("Validation failed. Proceeding directly to select.");
+            average();
+        }
+    });
+}, 1000);
