@@ -218,7 +218,6 @@ fetch("https://pdf.pseudolab-devfactory.com/api/journalist/validate", {
   .then((response) => {
     console.log(response);
     if (response.status === 422) {
-      // 422 오류 처리
       response.json().then((errorData) => {
         console.error("422 오류:", errorData);
       });
