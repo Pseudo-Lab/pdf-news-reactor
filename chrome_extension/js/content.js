@@ -150,6 +150,7 @@ setTimeout(async function () {
     try {
         update();
         const isValid = await validate(urlValue);
+//        기사 uri 검증
         console.log(isValid);
         if (isValid) {
             console.log("Validation successful. Proceeding directly to select.");
