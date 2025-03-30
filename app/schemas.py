@@ -1,8 +1,11 @@
 from pydantic import BaseModel
 
-# 기자 URL 검증 요청 스키마
+
+# 기자 + 기사 URL 기본 스키마
 class JournalistRequest(BaseModel):
+    articleurl: str
     journalisturl: str
+
 
 # 기자 평가 점수 추가 요청 스키마
 class JournalistScoreRequest(JournalistRequest):
@@ -11,6 +14,7 @@ class JournalistScoreRequest(JournalistRequest):
     recommend: int
     analytical: int
     wow: int
+
 
 # 기자 평균 평가 점수 응답 스키마
 class JournalistAverageScore(BaseModel):
