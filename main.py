@@ -21,6 +21,21 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+SCORE_FIELDS = ["useful", "touched", "recommend", "analytical", "wow"]
+
+
+def scores_are_equal(
+    existing: JournalistScore, incoming: JournalistScoreRequest
+) -> bool:
+    return all(
+        getattr(existing, field) == getattr(incoming, field) for field in SCORE_FIELDS
+    )
+
+
+def update_score_fields(score_obj: JournalistScore, source: JournalistScoreRequest):
+    for field in SCORE_FIELDS:
+        setattr(score_obj, field, getattr(source, field))
+
 
 @app.on_event("startup")
 def startup_event():
@@ -44,37 +59,48 @@ def validate_journalist(request: JournalistRequest, db: Session = Depends(get_db
 def add_journalist_score(
     request: JournalistScoreRequest, db: Session = Depends(get_db)
 ):
-    # 새로운 평가 추가
-    new_score = JournalistScore(
-        articleurl=request.articleurl,
-        journalisturl=request.journalisturl,
-        useful=request.useful,
-        touched=request.touched,
-        recommend=request.recommend,
-        analytical=request.analytical,
-        wow=request.wow,
+    existing_score = (
+        db.query(JournalistScore)
+        .filter_by(articleurl=request.articleurl, journalisturl=request.journalisturl)
+        .first()
     )
 
-    db.add(new_score)
-    db.commit()
-    logger.info(
-        f"New score added for journalist: {request.journalisturl}, article: {request.articleurl}"
-    )
+    if existing_score:
+        if scores_are_equal(existing_score, request):
+            logger.info(
+                f"Score is already the latest for journalist: {request.journalisturl}, article: {request.articleurl}"
+            )
+            message = "Score already up to date"
+        else:
+            update_score_fields(existing_score, request)
+            db.commit()
+            logger.info(
+                f"Updated score for journalist: {request.journalisturl}, article: {request.articleurl}"
+            )
+            message = "Score updated successfully"
+    else:
+        new_score = JournalistScore(
+            articleurl=request.articleurl,
+            journalisturl=request.journalisturl,
+            **{field: getattr(request, field) for field in SCORE_FIELDS},
+        )
+        db.add(new_score)
+        db.commit()
+        logger.info(
+            f"Added new score for journalist: {request.journalisturl}, article: {request.articleurl}"
+        )
+        message = "Score added successfully"
 
-    # 평균값 재계산
+    # 평균 점수 재계산
     scores = (
         db.query(JournalistScore).filter_by(journalisturl=request.journalisturl).all()
     )
     count = len(scores)
     avg_score = {
-        "useful_avg": sum(s.useful for s in scores) // count,
-        "touched_avg": sum(s.touched for s in scores) // count,
-        "recommend_avg": sum(s.recommend for s in scores) // count,
-        "analytical_avg": sum(s.analytical for s in scores) // count,
-        "wow_avg": sum(s.wow for s in scores) // count,
+        f"{field}_avg": sum(getattr(s, field) for s in scores) // count
+        for field in SCORE_FIELDS
     }
 
-    # 기존 평균값이 있는지 확인 후 업데이트 또는 추가
     existing_avg = (
         db.query(JournalistAverageScore)
         .filter_by(journalisturl=request.journalisturl)
@@ -83,18 +109,16 @@ def add_journalist_score(
     if existing_avg:
         for key, value in avg_score.items():
             setattr(existing_avg, key, value)
-        logger.info(f"Average score updated for journalist: {request.journalisturl}")
+        logger.info(f"Updated average score for journalist: {request.journalisturl}")
     else:
-        new_avg_score = JournalistAverageScore(
+        new_avg = JournalistAverageScore(
             journalisturl=request.journalisturl, **avg_score
         )
-        db.add(new_avg_score)
-        logger.info(
-            f"New average score created for journalist: {request.journalisturl}"
-        )
+        db.add(new_avg)
+        logger.info(f"Created average score for journalist: {request.journalisturl}")
 
     db.commit()
-    return {"message": "Score added and average updated successfully"}
+    return {"message": f"{message} and average updated successfully"}
 
 
 @app.post("/api/journalist/average-score")
