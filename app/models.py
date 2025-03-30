@@ -1,16 +1,20 @@
 from sqlalchemy import Column, Integer, String
+
 from app.database import Base
+
 
 class JournalistScore(Base):
     __tablename__ = "journalist_scores"
 
     id = Column(Integer, primary_key=True, index=True)
+    articleurl = Column(String, index=True)
     journalisturl = Column(String, index=True)
     useful = Column(Integer)
     touched = Column(Integer)
     recommend = Column(Integer)
     analytical = Column(Integer)
     wow = Column(Integer)
+
 
 class JournalistAverageScore(Base):
     __tablename__ = "journalist_avg_scores"
